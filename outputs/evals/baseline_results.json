@@ -1,0 +1,50 @@
+{
+  "model": "llama-3.1-8b-instant",
+  "results": {
+    "easy": {
+      "task_id": "easy",
+      "total_steps": 5,
+      "wrong_actions": 0,
+      "score": 0.9,
+      "breakdown": {
+        "root_cause_identified": 0.2,
+        "remediation_applied": 0.35,
+        "comms_posted": 0.1,
+        "correct_team_paged": "N/A",
+        "resolved": 0.15,
+        "efficiency_bonus": 0.1
+      },
+      "passed": true
+    },
+    "medium": {
+      "task_id": "medium",
+      "total_steps": 7,
+      "wrong_actions": 0,
+      "score": 1.0,
+      "breakdown": {
+        "root_cause_identified": 0.2,
+        "remediation_applied": 0.35,
+        "comms_posted": 0.1,
+        "correct_team_paged": 0.1,
+        "resolved": 0.15,
+        "efficiency_bonus": 0.1
+      },
+      "passed": true
+    },
+    "hard": {
+      "task_id": "hard",
+      "total_steps": 6,
+      "wrong_actions": 0,
+      "score": 1.0,
+      "breakdown": {
+        "root_cause_identified": 0.2,
+        "remediation_applied": 0.35,
+        "comms_posted": 0.1,
+        "correct_team_paged": 0.1,
+        "resolved": 0.15,
+        "efficiency_bonus": 0.1
+      },
+      "passed": true
+    }
+  }
+}
