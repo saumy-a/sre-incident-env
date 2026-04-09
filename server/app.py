@@ -44,10 +44,12 @@ def list_tasks():
     return {
         "tasks": [
             {
-                "id": task_id,
-                "description": task.description.split("\n")[0],
+                "task_id": task_id,
+                "task_name": task.title.split("\n")[0],
                 "difficulty": task.difficulty,
+                "description": task.description.split("\n")[0],
                 "max_steps": task.max_steps,
+                "success_threshold": 0.6,
             }
             for task_id, task in TASKS.items()
         ]
