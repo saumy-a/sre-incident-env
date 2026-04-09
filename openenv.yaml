@@ -1,62 +1,68 @@
 # OpenEnv specification
 openenv_version: "1.0"
+
 name: "SRE Incident Response Environment"
 
 environment:
   name: "SRE Incident Response Environment"
   description: >
-    An OpenEnv-compliant RL environment where an AI agent acts as a Site
-    Reliability Engineer responding to real production incidents. The agent
-    investigates alerts, identifies root causes, applies remediations,
-    and communicates status updates across three difficulty tiers.
+    A real-world SRE incident response environment where an RL agent
+    must triage production incidents, identify root causes, apply correct
+    remediations, and resolve incidents across three difficulty levels.
   version: "1.0.0"
   author: "saumy-a"
 
+# Server configuration
 server:
   framework: "fastapi"
   entrypoint: "server.app:app"
   port: 7860
   health_endpoint: "/health"
 
+# Available endpoints
 endpoints:
-  health: { method: "GET",  path: "/health", response: "ServerStatus" }
-  tasks:  { method: "GET",  path: "/tasks",  response: "list[TaskConfig]" }
-  state:  { method: "GET",  path: "/state",  response: "Observation" }
-  reset:  { method: "POST", path: "/reset",  request: "ResetRequest",  response: "ResetResponse" }
-  step:   { method: "POST", path: "/step",   request: "StepRequest",   response: "StepResult" }
-  grader: { method: "POST", path: "/grader", request: "GradeRequest",  response: "GraderResult" }
+  health:  { method: "GET",  path: "/health",  response: "ServerStatus" }
+  tasks:   { method: "GET",  path: "/tasks",   response: "list[TaskConfig]" }
+  state:   { method: "GET",  path: "/state",   response: "Observation" }
+  reset:   { method: "POST", path: "/reset",   request: "ResetRequest",  response: "ResetResponse" }
+  step:    { method: "POST", path: "/step",    request: "StepRequest",   response: "StepResult" }
+  grader:  { method: "POST", path: "/grader",  request: "GradeRequest",  response: "GraderResult" }
 
+# Tasks
 tasks:
   - id: easy
     name: "Payment API 500s after Deploy"
     difficulty: easy
-    metric: reward
+    metric: score
     threshold: 0.60
-    description: "Payment API error rate spikes after deploy — find root cause and rollback"
+    description: "Payment API error rate spikes after bad deployment — rollback required"
 
   - id: medium
     name: "Database Connection Pool Exhaustion"
     difficulty: medium
-    metric: reward
+    metric: score
     threshold: 0.60
-    description: "Three services returning 503s due to shared DB pool exhaustion"
+    description: "Multiple services returning 503s due to shared DB pool exhaustion"
 
   - id: hard
-    name: "CDN Misconfiguration Global Latency"
+    name: "CDN Misconfiguration Global Latency Spike"
     difficulty: hard
-    metric: reward
+    metric: score
     threshold: 0.60
-    description: "Global latency 8x baseline with 23 noisy alerts — find true CDN root cause"
+    description: "Global P1 outage caused by CDN routing rule change — disable feature flag"
 
+# Grading
 grading:
   score_range: [0.0, 1.0]
   score_type: float
   endpoint: "/grader"
 
+# Inference
 inference:
   script: "inference.py"
   command: "python inference.py"
 
+# Deployment
 deployment:
   platform: "huggingface-spaces"
   docker: true
