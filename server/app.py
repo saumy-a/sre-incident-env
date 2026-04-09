@@ -50,6 +50,7 @@ def list_tasks():
                 "description": task.description.split("\n")[0],
                 "max_steps": task.max_steps,
                 "success_threshold": 0.6,
+                "metric": "score",
             }
             for task_id, task in TASKS.items()
         ]
