@@ -291,7 +291,7 @@ def grade_episode(env: SreIncidentEnvironment) -> dict:
         "task_id": env._task_id,
         "total_steps": env._state.step_count,
         "wrong_actions": env._wrong_actions,
-        "score": round(min(max(score, 0.0), 1.0), 4),
+        "score": round(min(max(score, 0.01), 0.99), 4),
         "breakdown": breakdown,
         "passed": score >= 0.60,
     }

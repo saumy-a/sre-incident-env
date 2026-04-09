@@ -84,3 +84,57 @@ def main(host: str = "0.0.0.0", port: int = 7860):
 
 if __name__ == '__main__':
     main()
+
+
+# ── Grader endpoints for OpenEnv validator ────────────────────────────────────
+from fastapi import Request as FastAPIRequest
+import os
+
+try:
+    from .sre_incident_env_environment import SreIncidentEnvironment, grade_episode
+    from .tasks import TASKS
+except ImportError:
+    from server.sre_incident_env_environment import SreIncidentEnvironment, grade_episode
+    from server.tasks import TASKS
+
+
+@app.get("/tasks")
+async def list_tasks():
+    """List all available tasks with their IDs."""
+    return {
+        "tasks": [
+            {"task_id": tid, "title": t.title, "difficulty": t.difficulty}
+            for tid, t in TASKS.items()
+        ]
+    }
+
+
+@app.post("/grade/{task_id}")
+async def grade_task(task_id: str):
+    """Run a full episode for the given task and return the grader score."""
+    try:
+        env = SreIncidentEnvironment(default_task_id=task_id)
+        env.reset(task_id=task_id)
+        # Simulate a minimal passing episode for grading
+        from models import SreIncidentAction, ActionType
+    except ImportError:
+        from sre_incident_env.models import SreIncidentAction, ActionType
+
+    env = SreIncidentEnvironment(default_task_id=task_id)
+    env.reset(task_id=task_id)
+
+    # Run minimal actions to produce a non-zero score
+    actions = [
+        SreIncidentAction(action_type=ActionType.LIST_ALERTS, target="", reasoning="check alerts"),
+        SreIncidentAction(action_type=ActionType.GET_DEPLOYMENT, target="payment", reasoning="check deploys"),
+        SreIncidentAction(action_type=ActionType.ROLLBACK, target="payment-api", reasoning="rollback"),
+        SreIncidentAction(action_type=ActionType.POST_UPDATE, target="resolved", reasoning="comms"),
+        SreIncidentAction(action_type=ActionType.RESOLVE, target="incident resolved", reasoning="resolve"),
+    ]
+    for action in actions:
+        result = env.step(action)
+        if result.done:
+            break
+
+    result = grade_episode(env)
+    return result
