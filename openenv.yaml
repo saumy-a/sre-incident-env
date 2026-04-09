@@ -4,13 +4,17 @@ type: space
 runtime: fastapi
 app: server.app:app
 port: 7860
+
 tasks:
   - id: easy
-    description: "Payment API elevated 500s after deploy"
-    grader: server.sre_incident_env_environment:grade_episode
+    description: "Payment API elevated 500s after deploy — rollback required"
+    difficulty: easy
+    grader: POST /grader
   - id: medium
-    description: "Database connection pool exhaustion — cascade 503s"
-    grader: server.sre_incident_env_environment:grade_episode
+    description: "Database connection pool exhaustion — scale pgbouncer and page db-team"
+    difficulty: medium
+    grader: POST /grader
   - id: hard
-    description: "CDN misconfiguration causing global latency spike"
-    grader: server.sre_incident_env_environment:grade_episode
+    description: "CDN misconfiguration global latency spike — disable feature flag"
+    difficulty: hard
+    grader: POST /grader
