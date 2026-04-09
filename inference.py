@@ -10,8 +10,8 @@ Environment variables:
     API_BASE_URL        LLM endpoint (default: Groq)
     MODEL_NAME          Model identifier
     HF_TOKEN / API_KEY  API key
-    LOCAL_IMAGE_NAME    Docker image name (if using from_docker_image)
     SRE_TASK            Task to run: easy | medium | hard (default: easy)
+    ENV_BASE_URL        HF Space base URL (default: https://saumy-a-sre-incident-env.hf.space)
 """
 
 import asyncio
@@ -26,15 +26,15 @@ from sre_incident_env.client import SreIncidentEnv
 from sre_incident_env.models import SreIncidentAction, ActionType
 
 # ── Configuration ─────────────────────────────────────────────────────────────
-IMAGE_NAME   = os.getenv("LOCAL_IMAGE_NAME", "sre-incident-env:latest")
 API_KEY      = os.getenv("HF_TOKEN") or os.getenv("API_KEY") or os.getenv("OPENAI_API_KEY")
 API_BASE_URL = os.getenv("API_BASE_URL", "https://api.groq.com/openai/v1")
 MODEL_NAME   = os.getenv("MODEL_NAME", "llama-3.1-8b-instant")
 TASK_NAME    = os.getenv("SRE_TASK", "easy")
+ENV_BASE_URL = os.getenv("ENV_BASE_URL", "https://saumy-a-sre-incident-env.hf.space")
 BENCHMARK    = "sre_incident_env"
 MAX_STEPS    = 25
 TEMPERATURE  = 0.0
-MAX_TOKENS   = 400
+MAX_TOKENS   = 400  
 SUCCESS_SCORE_THRESHOLD = 0.60
 
 # ── Logging helpers ────────────────────────────────────────────────────────────
@@ -44,7 +44,6 @@ def log_start(task: str, env: str, model: str) -> None:
 def log_step(step: int, action: str, reward: float, done: bool, error: Optional[str]) -> None:
     error_val = error if error else "null"
     done_val = str(done).lower()
-    # Sanitise action string — no newlines, truncate to 120 chars
     action_clean = action.replace("\n", " ").replace("\r", "")[:120]
     print(
         f"[STEP] step={step} action={action_clean} reward={reward:.2f} done={done_val} error={error_val}",
@@ -147,7 +146,6 @@ async def run_episode(task_id: str, client: OpenAI, env) -> dict:
             user_msg = obs_to_prompt(obs)
             messages.append({"role": "user", "content": user_msg})
 
-            # Call LLM
             try:
                 completion = client.chat.completions.create(
                     model=MODEL_NAME,
@@ -162,7 +160,6 @@ async def run_episode(task_id: str, client: OpenAI, env) -> dict:
                 messages.append({"role": "assistant", "content": content})
                 print(f"[DEBUG] LLM error step {step}: {exc}", flush=True)
 
-            # Parse action
             error_msg = None
             try:
                 action = parse_action(content)
@@ -184,11 +181,12 @@ async def run_episode(task_id: str, client: OpenAI, env) -> dict:
             if done:
                 break
 
-        # Score = cumulative reward normalised to [0, 1]
-        # The environment's grader gives max ~1.0 total; we use direct sum clamped
         raw_score = sum(rewards)
         score = min(max(raw_score, 0.0), 1.0)
         success = score >= SUCCESS_SCORE_THRESHOLD
+
+    except Exception as exc:
+        print(f"[DEBUG] Episode error: {exc}", flush=True)
 
     finally:
         try:
@@ -213,13 +211,10 @@ async def main() -> None:
 
     for task_id in tasks:
         task_id = task_id.strip()
-        env = await SreIncidentEnv.from_docker_image(
-            IMAGE_NAME,
-            extra_env={"SRE_DEFAULT_TASK": task_id},
-        )
-        await run_episode(task_id, client, env)
+        # Connect directly to HF Space — no Docker needed
+        async with SreIncidentEnv(base_url=ENV_BASE_URL) as env:
+            await run_episode(task_id, client, env)
 
 
 if __name__ == "__main__":
     asyncio.run(main())
-    
