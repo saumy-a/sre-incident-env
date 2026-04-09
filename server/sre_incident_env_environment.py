@@ -23,16 +23,16 @@ except ImportError:
 
 
 # Reward constants
-R_ROOT_CAUSE    = 0.20
-R_REMEDIATION   = 0.35
-R_COMMS         = 0.10
-R_PAGE          = 0.10
-R_RESOLVE       = 0.15
-R_REASONING     = 0.02
-R_WRONG         = -0.05
-R_TIMEOUT       = -0.20
+R_ROOT_CAUSE = 0.20
+R_REMEDIATION = 0.35
+R_COMMS = 0.10
+R_PAGE = 0.10
+R_RESOLVE = 0.15
+R_REASONING = 0.02
+R_WRONG = -0.05
+R_TIMEOUT = -0.20
 R_EARLY_RESOLVE = -0.15
-R_WRONG_PAGE    = -0.05
+R_WRONG_PAGE = -0.05
 
 
 class SreIncidentEnvironment(Environment):
@@ -249,18 +249,29 @@ class SreIncidentEnvironment(Environment):
             return []
         t = self._task.title.lower()
         if "payment" in t:
-            return ["payment-api.http_5xx_rate > 0.10", "payment-api.p99_latency > 2000ms"]
+            return [
+                "payment-api.http_5xx_rate > 0.10",
+                "payment-api.p99_latency > 2000ms",
+            ]
         if "database" in t:
-            return ["order-service.http_503_rate > 0.30", "pgbouncer.pool_saturation > 0.95"]
+            return [
+                "order-service.http_503_rate > 0.30",
+                "pgbouncer.pool_saturation > 0.95",
+            ]
         if "cdn" in t:
-            return ["global.p99_latency > 4000ms", "eu-west-1.availability < 0.01", "cdn-edge.cache_hit_ratio < 0.05"]
+            return [
+                "global.p99_latency > 4000ms",
+                "eu-west-1.availability < 0.01",
+                "cdn-edge.cache_hit_ratio < 0.05",
+            ]
         return []
 
 
 # ── Grader ────────────────────────────────────────────────────────────────────
 
+
 def grade_episode(env: SreIncidentEnvironment) -> dict:
-    """Score a completed episode. Returns 0.0–1.0."""
+    """Score a completed episode. Returns scores strictly between 0 and 1."""
     task = env._task
     score = 0.0
     breakdown = {}
@@ -287,11 +298,13 @@ def grade_episode(env: SreIncidentEnvironment) -> dict:
     breakdown["efficiency_bonus"] = round(eff, 3)
     score += eff
 
+    final_score = round(min(max(score, 0.01), 0.999), 4)
+
     return {
         "task_id": env._task_id,
         "total_steps": env._state.step_count,
         "wrong_actions": env._wrong_actions,
-        "score": round(min(max(score, 0.01), 0.99), 4),
+        "score": final_score,
         "breakdown": breakdown,
         "passed": score >= 0.60,
     }

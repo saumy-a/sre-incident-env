@@ -9,31 +9,32 @@ Data models for the SRE Incident Response Environment.
 Typed Pydantic models for Action, Observation, and State.
 """
 
+import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
 from openenv.core.env_server.types import Action, Observation
-from pydantic import Field
+from pydantic import BaseModel, Field
 
 
 class ActionType(str, Enum):
     # Investigation
-    RUN_QUERY       = "run_query"
+    RUN_QUERY = "run_query"
     CHECK_DASHBOARD = "check_dashboard"
-    LIST_ALERTS     = "list_alerts"
-    GET_DEPLOYMENT  = "get_deployment"
+    LIST_ALERTS = "list_alerts"
+    GET_DEPLOYMENT = "get_deployment"
     # Remediation
-    ROLLBACK        = "rollback"
-    SCALE_SERVICE   = "scale_service"
+    ROLLBACK = "rollback"
+    SCALE_SERVICE = "scale_service"
     RESTART_SERVICE = "restart_service"
-    TOGGLE_FEATURE  = "toggle_feature"
+    TOGGLE_FEATURE = "toggle_feature"
     # Communication
-    PAGE_TEAM       = "page_team"
-    POST_UPDATE     = "post_update"
+    PAGE_TEAM = "page_team"
+    POST_UPDATE = "post_update"
     # Resolution
-    RESOLVE         = "resolve"
-    ESCALATE        = "escalate"
-    WAIT            = "wait"
+    RESOLVE = "resolve"
+    ESCALATE = "escalate"
+    WAIT = "wait"
 
 
 class SreIncidentAction(Action):
@@ -97,5 +98,19 @@ class SreIncidentObservation(Observation):
 
     # Episode info
     step: int = Field(default=0, description="Current step number")
-    resolved: bool = Field(default=False, description="Was incident correctly resolved?")
+    resolved: bool = Field(
+        default=False, description="Was incident correctly resolved?"
+    )
     hint: str = Field(default="", description="Progressive hint (may be empty)")
+
+
+class GraderResult(BaseModel):
+    """Result from the /grader endpoint."""
+
+    task_id: str
+    score: float = Field(..., description="Score strictly between 0 and 1")
+    passed: bool
+    details: Dict[str, Any] = Field(default_factory=dict)
+    graded_at: str = Field(
+        default_factory=lambda: datetime.datetime.utcnow().isoformat() + "Z"
+    )

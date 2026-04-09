@@ -205,13 +205,20 @@ def grade(request: GraderRequest):
     # Grade and clamp strictly between 0.001 and 0.999
     grade = grade_episode(env)
     raw_score = grade["score"]
-    score = round(max(0.001, min(0.999, raw_score)), 4)
+
+    # Ensure score is strictly between 0 and 1 (not 0.0, 1.0, 0.00, or 1.00)
+    if raw_score >= 1.0:
+        score = 0.999
+    elif raw_score <= 0.0:
+        score = 0.001
+    else:
+        score = round(raw_score, 4)
 
     return {
         "task_id": task_id,
         "score": score,
         "passed": score >= 0.5,
-        "breakdown": grade.get("breakdown", {}),
+        "details": grade.get("breakdown", {}),
         "steps": grade.get("total_steps", 0),
         "graded_at": datetime.now(timezone.utc).isoformat(),
     }
