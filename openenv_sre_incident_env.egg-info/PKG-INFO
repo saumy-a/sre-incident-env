@@ -4,6 +4,7 @@ Version: 0.1.0
 Summary: Sre Incident Env environment for OpenEnv
 Requires-Python: >=3.10
 Requires-Dist: huggingface-hub>=1.9.1
+Requires-Dist: openai>=2.30.0
 Requires-Dist: openenv-core[core]>=0.2.2
 Provides-Extra: dev
 Requires-Dist: pytest>=8.0.0; extra == "dev"

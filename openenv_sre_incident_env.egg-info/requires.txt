@@ -1,4 +1,5 @@
 huggingface-hub>=1.9.1
+openai>=2.30.0
 openenv-core[core]>=0.2.2
 
 [dev]
