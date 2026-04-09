@@ -5,6 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import os
+from datetime import datetime, timezone
 from openenv.core.env_server.http_server import create_app
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
@@ -17,7 +18,10 @@ try:
     from .tasks import TASKS
 except ModuleNotFoundError:
     from models import SreIncidentAction, SreIncidentObservation
-    from server.sre_incident_env_environment import SreIncidentEnvironment, grade_episode
+    from server.sre_incident_env_environment import (
+        SreIncidentEnvironment,
+        grade_episode,
+    )
     from server.tasks import TASKS
 
 _default_task = os.getenv("SRE_DEFAULT_TASK", "easy")
@@ -32,6 +36,7 @@ app = create_app(
 
 
 # ── /tasks endpoint ───────────────────────────────────────────────────────────
+
 
 @app.get("/tasks")
 def list_tasks():
@@ -51,6 +56,7 @@ def list_tasks():
 
 # ── /grader endpoint ──────────────────────────────────────────────────────────
 
+
 class GraderRequest(BaseModel):
     task_id: str
     episode_id: Optional[str] = None
@@ -66,7 +72,9 @@ def grade(request: GraderRequest):
     if task_id not in TASKS:
         return JSONResponse(
             status_code=400,
-            content={"error": f"Unknown task_id '{task_id}'. Valid: {list(TASKS.keys())}"},
+            content={
+                "error": f"Unknown task_id '{task_id}'. Valid: {list(TASKS.keys())}"
+            },
         )
 
     # Run a short deterministic episode using the optimal action sequence
@@ -84,31 +92,107 @@ def grade(request: GraderRequest):
     # Deterministic optimal policy per task
     optimal_sequences = {
         "easy": [
-            Action(action_type=ActionType.LIST_ALERTS, target="", reasoning="check alerts"),
-            Action(action_type=ActionType.GET_DEPLOYMENT, target="payment-api", reasoning="check deploy"),
-            Action(action_type=ActionType.RUN_QUERY, target="error rate payment", reasoning="confirm"),
-            Action(action_type=ActionType.ROLLBACK, target="payment-api", reasoning="fix"),
-            Action(action_type=ActionType.POST_UPDATE, target="rolled back payment-api", reasoning="comms"),
-            Action(action_type=ActionType.RESOLVE, target="rollback resolved issue", reasoning="done"),
+            Action(
+                action_type=ActionType.LIST_ALERTS, target="", reasoning="check alerts"
+            ),
+            Action(
+                action_type=ActionType.GET_DEPLOYMENT,
+                target="payment-api",
+                reasoning="check deploy",
+            ),
+            Action(
+                action_type=ActionType.RUN_QUERY,
+                target="error rate payment",
+                reasoning="confirm",
+            ),
+            Action(
+                action_type=ActionType.ROLLBACK, target="payment-api", reasoning="fix"
+            ),
+            Action(
+                action_type=ActionType.POST_UPDATE,
+                target="rolled back payment-api",
+                reasoning="comms",
+            ),
+            Action(
+                action_type=ActionType.RESOLVE,
+                target="rollback resolved issue",
+                reasoning="done",
+            ),
         ],
         "medium": [
-            Action(action_type=ActionType.LIST_ALERTS, target="", reasoning="check alerts"),
-            Action(action_type=ActionType.RUN_QUERY, target="pgbouncer connection pool", reasoning="find root cause"),
-            Action(action_type=ActionType.CHECK_DASHBOARD, target="database-health", reasoning="confirm"),
-            Action(action_type=ActionType.PAGE_TEAM, target="db-team", reasoning="page experts"),
-            Action(action_type=ActionType.SCALE_SERVICE, target="pgbouncer:6", reasoning="fix pool"),
-            Action(action_type=ActionType.POST_UPDATE, target="scaled pgbouncer", reasoning="comms"),
-            Action(action_type=ActionType.RESOLVE, target="pool exhaustion fixed", reasoning="done"),
+            Action(
+                action_type=ActionType.LIST_ALERTS, target="", reasoning="check alerts"
+            ),
+            Action(
+                action_type=ActionType.RUN_QUERY,
+                target="pgbouncer connection pool",
+                reasoning="find root cause",
+            ),
+            Action(
+                action_type=ActionType.CHECK_DASHBOARD,
+                target="database-health",
+                reasoning="confirm",
+            ),
+            Action(
+                action_type=ActionType.PAGE_TEAM,
+                target="db-team",
+                reasoning="page experts",
+            ),
+            Action(
+                action_type=ActionType.SCALE_SERVICE,
+                target="pgbouncer:6",
+                reasoning="fix pool",
+            ),
+            Action(
+                action_type=ActionType.POST_UPDATE,
+                target="scaled pgbouncer",
+                reasoning="comms",
+            ),
+            Action(
+                action_type=ActionType.RESOLVE,
+                target="pool exhaustion fixed",
+                reasoning="done",
+            ),
         ],
         "hard": [
-            Action(action_type=ActionType.LIST_ALERTS, target="", reasoning="check alerts"),
-            Action(action_type=ActionType.CHECK_DASHBOARD, target="cdn-edge-health", reasoning="cdn check"),
-            Action(action_type=ActionType.GET_DEPLOYMENT, target="cdn infra routing", reasoning="check change"),
-            Action(action_type=ActionType.RUN_QUERY, target="cdn cache routing", reasoning="confirm"),
-            Action(action_type=ActionType.PAGE_TEAM, target="cdn-team", reasoning="page cdn team"),
-            Action(action_type=ActionType.TOGGLE_FEATURE, target="cdn_new_routing:off", reasoning="disable flag"),
-            Action(action_type=ActionType.POST_UPDATE, target="disabled cdn_new_routing", reasoning="comms"),
-            Action(action_type=ActionType.RESOLVE, target="cdn routing fixed", reasoning="done"),
+            Action(
+                action_type=ActionType.LIST_ALERTS, target="", reasoning="check alerts"
+            ),
+            Action(
+                action_type=ActionType.CHECK_DASHBOARD,
+                target="cdn-edge-health",
+                reasoning="cdn check",
+            ),
+            Action(
+                action_type=ActionType.GET_DEPLOYMENT,
+                target="cdn infra routing",
+                reasoning="check change",
+            ),
+            Action(
+                action_type=ActionType.RUN_QUERY,
+                target="cdn cache routing",
+                reasoning="confirm",
+            ),
+            Action(
+                action_type=ActionType.PAGE_TEAM,
+                target="cdn-team",
+                reasoning="page cdn team",
+            ),
+            Action(
+                action_type=ActionType.TOGGLE_FEATURE,
+                target="cdn_new_routing:off",
+                reasoning="disable flag",
+            ),
+            Action(
+                action_type=ActionType.POST_UPDATE,
+                target="disabled cdn_new_routing",
+                reasoning="comms",
+            ),
+            Action(
+                action_type=ActionType.RESOLVE,
+                target="cdn routing fixed",
+                reasoning="done",
+            ),
         ],
     }
 
@@ -129,11 +213,13 @@ def grade(request: GraderRequest):
         "passed": score >= 0.5,
         "breakdown": grade.get("breakdown", {}),
         "steps": grade.get("total_steps", 0),
+        "graded_at": datetime.now(timezone.utc).isoformat(),
     }
 
 
 def main(host: str = "0.0.0.0", port: int = 7860):
     import uvicorn
+
     uvicorn.run(app, host=host, port=port)
 
 
